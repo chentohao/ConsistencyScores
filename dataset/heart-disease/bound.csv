@@ -1,0 +1,3 @@
+age,trestbps,chol,thalach,oldpeak,ca,sex_female,sex_male,cp_asymptomatic,cp_atypical angina,cp_non-anginal pain,cp_typical angina,fbs_false,fbs_true,restecg_having ST-T wave abnormality,restecg_left ventricular hypertrophy,restecg_nomal,exang_no,exang_yes,slope_downsloping,slope_flat,slope_upsloping,thal_fixed defect,thal_normal,thal_reversable defect
+18.5,80,103.5,73.5,-12.4,-11.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+90.5,180,383.5,225.5,14,12.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
