@@ -306,3 +306,137 @@ def prepare_disease_dataset(filename, path_data):
     }
 
     return dataset
+
+def prepare_spambase_dataset(filename, path_data):
+
+    # Read Dataset
+    df = pd.read_csv(path_data + filename)
+    df['capital_run_length_longest'] = df['capital_run_length_longest'].astype(float)
+    df['capital_run_length_total'] = df['capital_run_length_total'].astype(float)
+
+    # Features Categorization
+    columns = df.columns.tolist()
+    columns = columns[-1:] + columns[:-1]
+    df = df[columns]
+    class_name = 'spam'
+    possible_outcomes = [0,1]
+
+    type_features, features_type = recognize_features_type(df, class_name)
+
+    discrete, continuous = set_discrete_continuous(columns, type_features, class_name, discrete=None, continuous=None)
+
+    columns_tmp = list(columns)
+    columns_tmp.remove(class_name)
+    idx_features = {i: col for i, col in enumerate(columns_tmp)}
+
+    # Dataset Preparation for Scikit Alorithms
+    df_le, label_encoder = label_encode(df, discrete)
+    X = df_le.loc[:, df_le.columns != class_name].values
+    y = df_le[class_name].values
+
+    dataset = {
+        'name': filename.replace('.csv', ''),
+        'df': df,
+        'columns': list(columns),
+        'class_name': class_name,
+        'possible_outcomes': possible_outcomes,
+        'type_features': type_features,
+        'features_type': features_type,
+        'discrete': discrete,
+        'continuous': continuous,
+        'idx_features': idx_features,
+        'label_encoder': label_encoder,
+        'X': X,
+        'y': y,
+    }
+
+    return dataset
+
+def prepare_ionosphere_dataset(filename, path_data):
+
+    # Read Dataset
+    df = pd.read_csv(path_data + filename)
+    df['Attribute1'] = df['Attribute1'].astype(float)
+    df['Attribute2'] = df['Attribute2'].astype(float)
+
+    # Features Categorization
+    columns = df.columns.tolist()
+    columns = columns[-1:] + columns[:-1]
+    df = df[columns]
+    class_name = 'Class'
+    possible_outcomes = ['b','g']
+
+    type_features, features_type = recognize_features_type(df, class_name)
+
+    discrete, continuous = set_discrete_continuous(columns, type_features, class_name, discrete=None, continuous=None)
+
+    columns_tmp = list(columns)
+    columns_tmp.remove(class_name)
+    idx_features = {i: col for i, col in enumerate(columns_tmp)}
+
+    # Dataset Preparation for Scikit Alorithms
+    df_le, label_encoder = label_encode(df, discrete)
+    X = df_le.loc[:, df_le.columns != class_name].values
+    y = df_le[class_name].values
+
+    dataset = {
+        'name': filename.replace('.csv', ''),
+        'df': df,
+        'columns': list(columns),
+        'class_name': class_name,
+        'possible_outcomes': possible_outcomes,
+        'type_features': type_features,
+        'features_type': features_type,
+        'discrete': discrete,
+        'continuous': continuous,
+        'idx_features': idx_features,
+        'label_encoder': label_encoder,
+        'X': X,
+        'y': y,
+    }
+
+    return dataset
+
+def prepare_votes_dataset(filename, path_data):
+
+    # Read Dataset
+    df = pd.read_csv(path_data + filename)
+
+    # Features Categorization
+    columns = df.columns.tolist()
+    columns = columns[-1:] + columns[:-1]
+    df = df[columns]
+    class_name = 'Class'
+    possible_outcomes = [0,1]
+
+    type_features, features_type = recognize_features_type(df, class_name)
+
+    discrete = [' handicapped-infants_?', ' handicapped-infants_n', ' handicapped-infants_y', ' water-project-cost-sharing_?', ' water-project-cost-sharing_n', ' water-project-cost-sharing_y', ' adoption-of-the-budget-resolution_?', ' adoption-of-the-budget-resolution_n', ' adoption-of-the-budget-resolution_y', ' physician-fee-freeze_?', ' physician-fee-freeze_n', ' physician-fee-freeze_y', ' el-salvador-aid_?', ' el-salvador-aid_n', ' el-salvador-aid_y', ' religious-groups-in-schools_?', ' religious-groups-in-schools_n', ' religious-groups-in-schools_y', ' anti-satellite-test-ban_?', ' anti-satellite-test-ban_n', ' anti-satellite-test-ban_y', ' aid-to-nicaraguan-contras_?', ' aid-to-nicaraguan-contras_n', ' aid-to-nicaraguan-contras_y', ' mx-missile_?', ' mx-missile_n', ' mx-missile_y', ' immigration_?', ' immigration_n', ' immigration_y', ' synfuels-corporation-cutback_?', ' synfuels-corporation-cutback_n', ' synfuels-corporation-cutback_y', ' education-spending_?', ' education-spending_n', ' education-spending_y', ' superfund-right-to-sue_?', ' superfund-right-to-sue_n', ' superfund-right-to-sue_y', ' crime_?', ' crime_n', ' crime_y', ' duty-free-exports_?', ' duty-free-exports_n', ' duty-free-exports_y', ' export-administration-act-south-africa_?', ' export-administration-act-south-africa_n',' export-administration-act-south-africa_y']
+    discrete, continuous = set_discrete_continuous(columns, type_features, class_name, discrete, continuous=None)
+
+    columns_tmp = list(columns)
+    columns_tmp.remove(class_name)
+    idx_features = {i: col for i, col in enumerate(columns_tmp)}
+
+    # Dataset Preparation for Scikit Alorithms
+    df_le, label_encoder = label_encode(df, discrete)
+    X = df_le.loc[:, df_le.columns != class_name].values
+    y = df_le[class_name].values
+
+    dataset = {
+        'name': filename.replace('.csv', ''),
+        'df': df,
+        'columns': list(columns),
+        'class_name': class_name,
+        'possible_outcomes': possible_outcomes,
+        'type_features': type_features,
+        'features_type': features_type,
+        'discrete': discrete,
+        'continuous': continuous,
+        'idx_features': idx_features,
+        'label_encoder': label_encoder,
+        'X': X,
+        'y': y,
+    }
+
+    return dataset
