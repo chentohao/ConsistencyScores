@@ -134,8 +134,8 @@ def denormalize(img_tensor, device):
     """Inverse normalization tensor to PIL image (for visualization)"""
     mean = torch.tensor(CIFAR10_MEAN).view(3, 1, 1).to(device)
     std = torch.tensor(CIFAR10_STD).view(3, 1, 1).to(device)
-    img = img_tensor * std + mean  # 反标准化
-    img = img.clamp(0, 1).permute(1, 2, 0).cpu().numpy()  # HWC格式
+    img = img_tensor * std + mean
+    img = img.clamp(0, 1).permute(1, 2, 0).cpu().numpy()
     return Image.fromarray((img * 255).astype(np.uint8))
 
 def get_topk_pixels(attr_map, drop_ratio=0.5):
@@ -246,7 +246,6 @@ def get_attribute_maps(model, img_tensor, device):
         mask = (segments == seg_idx)
         lime_attr_combined[mask] = abs(score)
 
-    # 归一化综合重要性图
     if lime_attr_combined.max() > lime_attr_combined.min():
         lime_attr_normalized = (lime_attr_combined - lime_attr_combined.min()) / (lime_attr_combined.max() - lime_attr_combined.min())
     else:
@@ -412,27 +411,27 @@ if __name__ == "__main__":
     """
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(
-        model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4  # 优化器
+        model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)  # 学习率调度
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
     
-    # 3. 训练模型（遵循仓库训练逻辑）
-    print("\n=== 开始训练（遵循 kuangliu/pytorch-cifar 策略）===")
+    # train model
+    print("\n=== Start training===")
     best_accuracy = 0.0
     for epoch in range(EPOCHS):
         train_loss = train(model, train_loader, optimizer, criterion, device)
         test_loss, test_acc = test(model, test_loader, criterion, device)
         scheduler.step()
         print(f"Epoch [{epoch+1}/{EPOCHS}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.2f}%")
-        # 保存最优权重
+        # Save optimal weights
         if test_acc > best_accuracy:
             best_accuracy = test_acc
             torch.save(model.state_dict(), "resnet18_cifar10_best.pth")
-            print(f"保存最优权重（准确率: {best_accuracy:.2f}%）")
-    print(f"\n训练完成！最优测试准确率: {best_accuracy:.2f}%")
+            print(f"Save optimal weights(best_accuracy: {best_accuracy:.2f}%)")
+    print(f"\nTraining completed! Optimal accuracy: {best_accuracy:.2f}%")
     """
 
-    # 4. Load the optimal weights
+    # Load the optimal weights
     model.load_state_dict(torch.load("resnet18_cifar10_best.pth", map_location=device, weights_only=True))
     model.eval()
     
