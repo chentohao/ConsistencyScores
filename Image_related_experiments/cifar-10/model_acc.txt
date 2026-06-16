@@ -1,0 +1,2 @@
+resnet18 cifar10 94.44%
+vgg16 cifar10 92.15%

@@ -1,0 +1,14 @@
+==================================================
+Summary results
+==================================================
+Total number of experimental samples: 10000
+
+=== total_duration: 23:44:12.101017 ===
+Model accuracy: 94.44%
+Feature dropout ratio: 70.0%
+
+Average consistency score of each method:
+LIME: 0.1117
+SHAP: 0.2123
+CAM: 0.1611
+IG: 0.1707

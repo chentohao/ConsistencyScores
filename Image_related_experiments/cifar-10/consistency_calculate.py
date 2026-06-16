@@ -134,15 +134,17 @@ def denormalize(img_tensor, device):
     """Inverse normalization tensor to PIL image (for visualization)"""
     mean = torch.tensor(CIFAR10_MEAN).view(3, 1, 1).to(device)
     std = torch.tensor(CIFAR10_STD).view(3, 1, 1).to(device)
-    img = img_tensor * std + mean
-    img = img.clamp(0, 1).permute(1, 2, 0).cpu().numpy()
+    img = img_tensor * std + mean  # 反标准化
+    img = img.clamp(0, 1).permute(1, 2, 0).cpu().numpy()  # HWC格式
     return Image.fromarray((img * 255).astype(np.uint8))
 
 def get_topk_pixels(attr_map, drop_ratio=0.5):
     attr_flat = attr_map.flatten()
     k = int(len(attr_flat) * drop_ratio)
     # Sort by the absolute value of significance from small to large, and select the top k (most important pixels)
-    topk_indices = np.argsort(np.abs(attr_flat))[-k:]
+    #topk_indices = np.argsort(np.abs(attr_flat))[-k:]
+    #least important pixels
+    topk_indices = np.argsort(np.abs(attr_flat))[:k]
     # Convert to 2D coordinates (H, W)
     topk_coords = np.unravel_index(topk_indices, attr_map.shape[:2])
     return topk_coords
@@ -246,6 +248,7 @@ def get_attribute_maps(model, img_tensor, device):
         mask = (segments == seg_idx)
         lime_attr_combined[mask] = abs(score)
 
+    # 归一化综合重要性图
     if lime_attr_combined.max() > lime_attr_combined.min():
         lime_attr_normalized = (lime_attr_combined - lime_attr_combined.min()) / (lime_attr_combined.max() - lime_attr_combined.min())
     else:
@@ -278,7 +281,7 @@ def get_attribute_maps(model, img_tensor, device):
     shap_attr_32x32 = (shap_attr_32x32 - shap_attr_32x32.min()) / (shap_attr_32x32.max() - shap_attr_32x32.min() + 1e-8)
     attr_maps['SHAP'] = shap_attr_32x32
     
-    # -------------------------- CAM --------------------------
+    # -------------------------- Grad-CAM --------------------------
     target_layer = model.layer4[-1]
     cam = GradCAM(model=model, target_layers=[target_layer])
     input_tensor = img_tensor.unsqueeze(0).to(device)
@@ -292,7 +295,7 @@ def get_attribute_maps(model, img_tensor, device):
 
     grayscale_cam = cam(input_tensor=input_tensor, targets=targets)
     cam_attr = grayscale_cam[0]
-    attr_maps['CAM'] = cam_attr
+    attr_maps['Grad-CAM'] = cam_attr
     
     # -------------------------- Integrated Gradients --------------------------
     ig = IntegratedGradients(model)
@@ -314,7 +317,7 @@ def get_attribute_maps(model, img_tensor, device):
 # -------------------------- Feature dropout and consistency calculation --------------------------
 def drop_experiment_all_methods(model, img_tensor, device, drop_ratio=0.5):
     attr_maps = get_attribute_maps(model, img_tensor, device)
-    method_names = list(attr_maps.keys())  # ['LIME', 'SHAP', 'CAM', 'IG']
+    method_names = list(attr_maps.keys())  # ['LIME', 'SHAP', 'Grad-CAM', 'IG']
     
     with torch.no_grad():
         orig_output = model(img_tensor.unsqueeze(0).to(device))
@@ -361,7 +364,7 @@ def drop_experiment_all_methods(model, img_tensor, device, drop_ratio=0.5):
 
 if __name__ == "__main__":
     total_start = time.time()
-    result_dir = 'result'
+    result_dir = 'result_0.7_bottomk'
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
 
@@ -375,8 +378,8 @@ if __name__ == "__main__":
     EPOCHS = 50  # acc: 94.44%
     BATCH_SIZE = 128
     LEARNING_RATE = 0.1
-    DROP_RATIO = 0.5
-    NUM_SAMPLES = 1000
+    DROP_RATIO = 0.7
+    NUM_SAMPLES = 10000
     RANDOM_SEED = 42
 
     train_transform, test_transform = get_data_transforms()
@@ -411,34 +414,34 @@ if __name__ == "__main__":
     """
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(
-        model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4
+        model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4  # 优化器
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)  # 学习率调度
     
-    # train model
-    print("\n=== Start training===")
+    # 3. 训练模型（遵循仓库训练逻辑）
+    print("\n=== 开始训练（遵循 kuangliu/pytorch-cifar 策略）===")
     best_accuracy = 0.0
     for epoch in range(EPOCHS):
         train_loss = train(model, train_loader, optimizer, criterion, device)
         test_loss, test_acc = test(model, test_loader, criterion, device)
         scheduler.step()
         print(f"Epoch [{epoch+1}/{EPOCHS}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.2f}%")
-        # Save optimal weights
+        # 保存最优权重
         if test_acc > best_accuracy:
             best_accuracy = test_acc
             torch.save(model.state_dict(), "resnet18_cifar10_best.pth")
-            print(f"Save optimal weights(best_accuracy: {best_accuracy:.2f}%)")
-    print(f"\nTraining completed! Optimal accuracy: {best_accuracy:.2f}%")
+            print(f"保存最优权重（准确率: {best_accuracy:.2f}%）")
+    print(f"\n训练完成！最优测试准确率: {best_accuracy:.2f}%")
     """
 
-    # Load the optimal weights
+    # 4. Load the optimal weights
     model.load_state_dict(torch.load("resnet18_cifar10_best.pth", map_location=device, weights_only=True))
     model.eval()
     
     batch_results = {
         'LIME': {'consistencies': []},
         'SHAP': {'consistencies': []},
-        'CAM': {'consistencies': []},
+        'Grad-CAM': {'consistencies': []},
         'IG': {'consistencies': []}
     }
 
@@ -510,7 +513,7 @@ if __name__ == "__main__":
     
     plt.figure(figsize=(10, 6))
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-    methods_display = ['LIME', 'SHAP', 'CAM', 'Integrated Gradients']
+    methods_display = ['LIME', 'SHAP', 'Grad-CAM', 'Integrated Gradients']
     
     bars = plt.bar(
         methods_display,

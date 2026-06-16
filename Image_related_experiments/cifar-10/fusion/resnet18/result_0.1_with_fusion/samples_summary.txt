@@ -1,0 +1,19 @@
+==================================================
+Summary results
+==================================================
+Total number of experimental samples: 10000
+
+=== total_duration: 1 day, 19:43:17.753191 ===
+Model accuracy: 94.44%
+Feature dropout ratio: 10.0%
+
+Average consistency score of each method:
+LIME: 0.8255
+SHAP: 0.7588
+Grad-CAM: 0.7562
+IG: 0.7504
+Fusion: 0.5484
+
+Fusion explanation:
+  - If there are inconsistent base interpreters, fuse their feature importance;
+  - If all base interpreters are consistent, fuse all base interpreters' feature importance.
